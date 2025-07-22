@@ -174,6 +174,7 @@
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s;
+            position: relative;
         }
 
         .file-upload:hover {
@@ -195,6 +196,15 @@
             font-size: 0.9rem;
             color: var(--dark-color);
             opacity: 0.8;
+            word-break: break-all;
+        }
+
+        .file-preview {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 15px;
+            display: none;
+            border-radius: 5px;
         }
 
         .upload-btn {
@@ -208,6 +218,10 @@
             cursor: pointer;
             transition: all 0.3s;
             margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .upload-btn:hover {
@@ -249,6 +263,9 @@
             color: var(--success-color);
             margin-top: 20px;
             display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .error-message {
@@ -256,6 +273,31 @@
             color: var(--warning-color);
             margin-top: 20px;
             display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .remove-file {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--warning-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .file-upload:hover .remove-file {
+            opacity: 1;
         }
 
         /* Animations */
@@ -265,8 +307,17 @@
             100% { transform: scale(1); }
         }
 
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .uploading .upload-btn {
             animation: pulse 1.5s infinite;
+        }
+
+        .uploading .upload-btn i {
+            animation: spin 1s linear infinite;
         }
 
         /* Responsive */
@@ -357,11 +408,15 @@
                 <div class="form-group">
                     <label>Upload File (PDF or DOCX, max 100MB)</label>
                     <div class="file-upload" id="fileUpload">
+                        <button class="remove-file" id="removeFile" title="Remove file">
+                            <i class="fas fa-times"></i>
+                        </button>
                         <i class="fas fa-cloud-upload-alt"></i>
                         <p>Click to browse or drag and drop your file here</p>
                         <div class="file-info" id="fileInfo">No file selected</div>
+                        <img class="file-preview" id="filePreview" alt="File preview">
+                        <input type="file" id="fileInput" accept=".pdf,.docx" style="display: none;">
                     </div>
-                    <input type="file" id="fileInput" accept=".pdf,.docx" style="display: none;">
                 </div>
                 
                 <div class="progress-container" id="progressContainer">
@@ -412,6 +467,8 @@
         const fileUpload = document.getElementById('fileUpload');
         const fileInput = document.getElementById('fileInput');
         const fileInfo = document.getElementById('fileInfo');
+        const filePreview = document.getElementById('filePreview');
+        const removeFileBtn = document.getElementById('removeFile');
         const uploadBtn = document.getElementById('uploadBtn');
         const progressContainer = document.getElementById('progressContainer');
         const progressBar = document.getElementById('progressBar');
@@ -449,34 +506,63 @@
         }
 
         // File upload click handler
-        fileUpload.addEventListener('click', () => {
-            fileInput.click();
+        fileUpload.addEventListener('click', (e) => {
+            // Don't trigger file input if clicking on the remove button
+            if (e.target !== removeFileBtn && e.target !== removeFileBtn.querySelector('i')) {
+                fileInput.click();
+            }
         });
 
         // Drag and drop functionality
-        fileUpload.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            fileUpload.style.borderColor = var(--primary-color);
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileUpload.addEventListener(eventName, preventDefaults, false);
         });
 
-        fileUpload.addEventListener('dragleave', () => {
-            fileUpload.style.borderColor = var(--glass-border);
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileUpload.addEventListener(eventName, highlight, false);
         });
 
-        fileUpload.addEventListener('drop', (e) => {
-            e.preventDefault();
-            fileUpload.style.borderColor = var(--glass-border);
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileUpload.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            fileUpload.style.borderColor = 'var(--primary-color)';
+            fileUpload.style.backgroundColor = 'rgba(67, 97, 238, 0.1)';
+        }
+
+        function unhighlight() {
+            fileUpload.style.borderColor = 'var(--glass-border)';
+            fileUpload.style.backgroundColor = '';
+        }
+
+        fileUpload.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
             
-            if (e.dataTransfer.files.length) {
-                handleFileSelect(e.dataTransfer.files[0]);
+            if (files.length) {
+                handleFileSelect(files[0]);
             }
-        });
+        }
 
         // File input change handler
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length) {
                 handleFileSelect(e.target.files[0]);
             }
+        });
+
+        // Remove file handler
+        removeFileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            resetFileInput();
         });
 
         // Handle file selection
@@ -497,6 +583,63 @@
             selectedFile = file;
             fileInfo.textContent = `${file.name} (${formatFileSize(file.size)})`;
             uploadBtn.disabled = false;
+            
+            // Show preview for PDF (first page)
+            if (file.type === 'application/pdf') {
+                showPdfPreview(file);
+            } else {
+                filePreview.style.display = 'none';
+            }
+            
+            // Show remove button
+            removeFileBtn.style.display = 'flex';
+        }
+
+        // Show PDF preview
+        function showPdfPreview(file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                // Load the PDF using PDF.js
+                const typedarray = new Uint8Array(e.target.result);
+                
+                // Load the PDF document
+                pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+                    // Fetch the first page
+                    return pdf.getPage(1);
+                }).then(function(page) {
+                    const viewport = page.getViewport({ scale: 1.0 });
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    
+                    // Render PDF page into canvas context
+                    const renderContext = {
+                        canvasContext: context,
+                        viewport: viewport
+                    };
+                    
+                    return page.render(renderContext).promise.then(function() {
+                        // Convert canvas to image and display
+                        filePreview.src = canvas.toDataURL();
+                        filePreview.style.display = 'block';
+                    });
+                });
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Reset file input
+        function resetFileInput() {
+            selectedFile = null;
+            fileInput.value = '';
+            fileInfo.textContent = 'No file selected';
+            filePreview.style.display = 'none';
+            filePreview.src = '';
+            uploadBtn.disabled = true;
+            removeFileBtn.style.display = 'none';
         }
 
         // Format file size
@@ -523,10 +666,18 @@
             const uploader = document.getElementById('uploader').value.trim();
             const type = document.getElementById('type').value;
             
+            // Validate form
+            if (!title || !level || !uploader || !type) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
             // Show progress
             progressContainer.style.display = 'block';
             uploadBtn.disabled = true;
             uploadForm.classList.add('uploading');
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'none';
             
             try {
                 // Generate unique filename
@@ -560,7 +711,8 @@
                             type,
                             fileUrl,
                             uploadDate: firebase.firestore.FieldValue.serverTimestamp(),
-                            downloadCount: 0
+                            downloadCount: 0,
+                            lastDownload: null
                         });
                         
                         // Show success
@@ -577,15 +729,13 @@
         // Show success message
         function showSuccess() {
             progressContainer.style.display = 'none';
-            successMessage.style.display = 'block';
+            successMessage.style.display = 'flex';
             errorMessage.style.display = 'none';
             uploadForm.classList.remove('uploading');
             
             // Reset form
             uploadForm.reset();
-            fileInfo.textContent = 'No file selected';
-            selectedFile = null;
-            uploadBtn.disabled = true;
+            resetFileInput();
             
             // Hide success message after 5 seconds
             setTimeout(() => {
@@ -596,7 +746,7 @@
         // Show error message
         function showError() {
             progressContainer.style.display = 'none';
-            errorMessage.style.display = 'block';
+            errorMessage.style.display = 'flex';
             successMessage.style.display = 'none';
             uploadForm.classList.remove('uploading');
             uploadBtn.disabled = false;
@@ -605,6 +755,29 @@
             setTimeout(() => {
                 errorMessage.style.display = 'none';
             }, 5000);
+        }
+
+        // Load PDF.js library dynamically
+        const pdfjsLib = {
+            getDocument: function() {
+                return {
+                    promise: Promise.reject(new Error('PDF.js not loaded'))
+                };
+            }
+        };
+
+        // Dynamically load PDF.js if not already loaded
+        if (typeof window.pdfjsLib === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js';
+            script.onload = function() {
+                // Set worker path
+                pdfjsLib = window['pdfjs-dist/build/pdf'];
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+            };
+            document.head.appendChild(script);
+        } else {
+            pdfjsLib = window['pdfjs-dist/build/pdf'];
         }
     </script>
 </body>
