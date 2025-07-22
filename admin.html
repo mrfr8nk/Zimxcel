@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learnify - Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo.png" type="image/png">
+    <style>
+        :root {
+            --primary-color: #4a6bff;
+            --secondary-color: #f8f9fa;
+            --text-color: #333;
+            --light-text: #777;
+            --dark-bg: #1a1a2e;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+            --error-color: #ff4757;
+            --success-color: #2ed573;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #5d78ff;
+            --secondary-color: #16213e;
+            --text-color: #f0f0f0;
+            --light-text: #b0b0b0;
+            --dark-bg: #0f0f23;
+            --card-bg: #1a1a2e;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --error-color: #ff6b81;
+            --success-color: #7bed9f;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            transition: var(--transition);
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 5%;
+            background-color: var(--card-bg);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            transition: var(--transition);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo {
+            height: 40px;
+            width: auto;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .nav-links a.active {
+            color: var(--primary-color);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background-color: var(--primary-color);
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(30deg);
+        }
+
+        .login-container {
+            max-width: 400px;
+            margin: 5rem auto;
+            padding: 2rem;
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .login-container h2 {
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid var(--light-text);
+            border-radius: 5px;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            transition: var(--transition);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(74, 107, 255, 0.2);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .login-btn:hover {
+            background-color: #3a56e0;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .admin-panel {
+            padding: 2rem 5%;
+            display: none;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .admin-title {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background-color: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--light-text);
+            font-size: 0.9rem;
+        }
+
+        .resources-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+            background-color: var(--card-bg);
+            box-shadow: var(--shadow);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .resources-table th, .resources-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .resources-table th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+        }
+
+        .resources-table tr:hover {
+            background-color: rgba(74, 107, 255, 0.1);
+        }
+
+        .action-btn {
+            padding: 0.3rem 0.8rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-right: 0.5rem;
+        }
+
+        .view-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .delete-btn {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .action-btn:hover {
+            opacity: 0.8;
+        }
+
+        .success-message {
+            background-color: var(--success-color);
+            color: white;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+
+            .resources-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="logo-container">
+                <img src="assets/images/logo.png" alt="Learnify Logo" class="logo">
+                <h1>Learnify</h1>
+            </div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/upload">Upload</a>
+                <a href="/admin" class="active">Admin</a>
+                <a href="/terms">Terms</a>
+            </div>
+            <button class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </button>
+        </nav>
+    </header>
+
+    <div class="login-container" id="loginContainer">
+        <h2>Admin Login</h2>
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" placeholder="Enter your username">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter your password">
+        </div>
+        <button class="login-btn" id="loginBtn">Login</button>
+        <div class="error-message" id="errorMessage"></div>
+    </div>
+
+    <div class="admin-panel" id="adminPanel">
+        <div class="admin-header">
+            <h2 class="admin-title">Admin Dashboard</h2>
+            <button class="logout-btn" id="logoutBtn">Logout</button>
+        </div>
+
+        <div class="success-message" id="successMessage"></div>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-value" id="totalResources">0</div>
+                <div class="stat-label">Total Resources</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalDownloads">0</div>
+                <div class="stat-label">Total Downloads</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="todayUploads">0</div>
+                <div class="stat-label">Uploads Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="todayDownloads">0</div>
+                <div class="stat-label">Downloads Today</div>
+            </div>
+        </div>
+
+        <h3>All Resources</h3>
+        <table class="resources-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Level</th>
+                    <th>Uploader</th>
+                    <th>Date</th>
+                    <th>Downloads</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="resourcesTableBody">
+                <!-- Resources will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBId6e837ZmLhkzvDozFeJyn0EXUhF_Ftg",
+            authDomain: "zimxcel.firebaseapp.com",
+            projectId: "zimxcel",
+            storageBucket: "zimxcel.appspot.com",
+            messagingSenderId: "73188096891",
+            appId: "1:73188096891:web:ed9a0b34ff8d9dc79b5bde",
+            measurementId: "G-38VCEG9G6R"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        // DOM elements
+        const themeToggle = document.getElementById('themeToggle');
+        const loginContainer = document.getElementById('loginContainer');
+        const adminPanel = document.getElementById('adminPanel');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const resourcesTableBody = document.getElementById('resourcesTableBody');
+        const totalResources = document.getElementById('totalResources');
+        const totalDownloads = document.getElementById('totalDownloads');
+        const todayUploads = document.getElementById('todayUploads');
+        const todayDownloads = document.getElementById('todayDownloads');
+
+        // Admin credentials
+        const ADMIN_CREDENTIALS = {
+            username: "mrfrankofc",
+            password: "mucheri07"
+        };
+
+        // Theme toggle functionality
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            
+            const icon = themeToggle.querySelector('i');
+            icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            
+            localStorage.setItem('theme', newTheme);
+        });
+
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        const icon = themeToggle.querySelector('i');
+        icon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+
+        // Login functionality
+        loginBtn.addEventListener('click', () => {
+            const username =usernameInput.value.trim();
+const password = passwordInput.value.trim();
+
+text
+        if (!username || !password) {
+            errorMessage.textContent = "Please enter both username and password";
+            return;
+        }
+
+        if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+            // Successful login
+            loginContainer.style.display = "none";
+            adminPanel.style.display = "block";
+            errorMessage.textContent = "";
+            loadAdminData();
+        } else {
+            errorMessage.textContent = "Invalid username or password";
+        }
+    });
+
+    // Logout functionality
+    logoutBtn.addEventListener('click', () => {
+        loginContainer.style.display = "block";
+        adminPanel.style.display = "none";
+        usernameInput.value = "";
+        passwordInput.value = "";
+    });
+
+    // Load admin data
+    function loadAdminData() {
+        // Load statistics
+        db.collection("resources").get().then((querySnapshot) => {
+            let totalRes = 0;
+            let totalDown = 0;
+            let todayUp = 0;
+            let todayDown = 0;
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                totalRes++;
+                totalDown += data.downloads || 0;
+                
+                const uploadDate = data.uploadDate.toDate();
+                if (uploadDate >= today) {
+                    todayUp++;
+                }
+                
+                if (data.lastDownload) {
+                    const lastDownload = data.lastDownload.toDate();
+                    if (lastDownload >= today) {
+                        todayDown++;
+                    }
+                }
+            });
+            
+            totalResources.textContent = totalRes;
+            totalDownloads.textContent = totalDown;
+            todayUploads.textContent = todayUp;
+            todayDownloads.textContent = todayDown;
+        });
+        
+        // Load all resources for table
+        db.collection("resources").orderBy("uploadDate", "desc").get().then((querySnapshot) => {
+            resourcesTableBody.innerHTML = "";
+            
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const row = document.createElement("tr");
+                
+                row.innerHTML = `
+                    <td>${data.title}</td>
+                    <td>${data.type}</td>
+                    <td>${data.level}</td>
+                    <td>${data.uploader}</td>
+                    <td>${data.uploadDate.toDate().toLocaleDateString()}</td>
+                    <td>${data.downloads || 0}</td>
+                    <td>
+                        <button class="action-btn view-btn" data-id="${doc.id}">View</button>
+                        <button class="action-btn delete-btn" data-id="${doc.id}">Delete</button>
+                    </td>
+                `;
+                
+                resourcesTableBody.appendChild(row);
+                
+                // Add event listeners to buttons
+                row.querySelector(".view-btn").addEventListener("click", () => viewResource(doc.id));
+                row.querySelector(".delete-btn").addEventListener("click", () => deleteResource(doc.id, data.fileUrl));
+            });
+        });
+    }
+
+    // View resource
+    function viewResource(resourceId) {
+        db.collection("resources").doc(resourceId).get().then((doc) => {
+            if (doc.exists) {
+                const resource = doc.data();
+                alert(`Resource Details:\n\nTitle: ${resource.title}\nType: ${resource.type}\nLevel: ${resource.level}\nUploader: ${resource.uploader}\nDownloads: ${resource.downloads || 0}\nDate: ${resource.uploadDate.toDate().toLocaleDateString()}`);
+            }
+        });
+    }
+
+    // Delete resource
+    function deleteResource(resourceId, fileUrl) {
+        if (!confirm("Are you sure you want to delete this resource? This action cannot be undone.")) {
+            return;
+        }
+        
+        // Delete from Firestore
+        db.collection("resources").doc(resourceId).delete()
+            .then(() => {
+                // Delete file from Storage
+                const fileRef = storage.refFromURL(fileUrl);
+                return fileRef.delete();
+            })
+            .then(() => {
+                successMessage.textContent = "Resource deleted successfully!";
+                successMessage.style.display = "block";
+                setTimeout(() => {
+                    successMessage.style.display = "none";
+                }, 3000);
+                
+                // Reload data
+                loadAdminData();
+            })
+            .catch((error) => {
+                console.error("Error deleting resource: ", error);
+                alert("Error deleting resource. Please try again.");
+            });
+    }
+
+    // Check if already logged in (for page refresh)
+    document.addEventListener("DOMContentLoaded", () => {
+        // In a real app, you would check for an active session/token
+        // For this demo, we'll just hide the login form if credentials match
+        if (localStorage.getItem("adminLoggedIn") === "true") {
+            loginContainer.style.display = "none";
+            adminPanel.style.display = "block";
+            loadAdminData();
+        }
+    });
+</script>
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+</body> </html> 
